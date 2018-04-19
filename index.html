@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html>
+<head></head>
+<body onload="hideForm()">
+	<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.7.2.min.js" type="text/javascript"></script>
+	<script src="js/application.js" type="text/javascript"></script>
+	<h1>Upload Tests:</h1>
+
+	<input type='file' accept='text/csv' onchange='openFile(event)' multiple="multiple" id="files"><br>
+
+	<div id="form">
+		<form onsubmit="return createTests(event)">
+			<div id="tests">
+			</div>
+			<div>
+				<button type="submit">Submit</button>
+			</div>
+		</form>
+	</div>
+	<div id="testConversation"> </div>
+</body>
+</html>
