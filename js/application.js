@@ -1,24 +1,22 @@
 // UI FUNCTIONS
 function appendTestsToUI(testCases) {
   for (let test in testCases) {
-    let t = fixTestCaseName(test);
+    let t = replaceAll(test, "\"", "'");
     localStorage.setItem(t, testCases[test]);
     $("#tests").append(`<input type="checkbox" class="testcase" value="${t}" onmouseover="showTestConversation(this)" onmouseout="removeTestConversation(this)"> ${t} </br>`);
   }
-
   showForm();
 }
 
 function showTestConversation(event) {
   let id = event.value;
   let test = localStorage.getItem(id);
-  let ft = formatTestFromCSV(test, id);
+  let ft = formatTestForUI(test);
 
   addTestConversationHeader();
   for (let line in ft) {
     $("#testConversation").append(`<p class="testconv">${ft[line]}</p>`);
   }
-
   $("#testConversation").show();
 }
 
@@ -35,28 +33,29 @@ function hideForm() {
 }
 
 function showForm() {
-  $("#form").show();
+   $("#form").show();
 }
 
 function getCheckedTests() {
   let checkedTests = $(".testcase:checked");
-  let range = Array.from(Array(checkedTests.length).keys());
 
-  return range.map(test => checkedTests[test].value);
+  return Array.from(Array(checkedTests.length).keys(), test =>
+    checkedTests[test].value
+  );
 }
 
 function addDownloadElement(element){
-  document.body.appendChild(element);
+  $("body").append(element)
 }
 
 function removeDownloadElment(element){
-  document.body.removeChild(element);
+  $("body").remove(element);
 }
 
 // READ FUNCTIONS
 function openFile(event) {
-  const input = event.target;
-  const testFiles = input.files;
+  let input = event.target;
+  let testFiles = input.files;
 
   for (let i = 0; i < testFiles.length; i++) {
     let reader = new FileReader();
@@ -67,7 +66,6 @@ function openFile(event) {
 
       appendTestsToUI(testCases);
     };
-
     reader.readAsText(testFiles[i]);
   }
 }
@@ -97,30 +95,24 @@ function convertTests(strData) {
     } else {
       strMatchedValue = arrMatches[3];
     }
-
     testFileData[testFileData.length - 1].push(strMatchedValue);
   }
-
   testFileData = testFileData.slice(3, -1);
   return testsToHash(testFileData);
 }
 
-// done recursively out of bordem... refactor to fit codebase style
 function testsToHash(fileData, testCaseName="", testHash={}, currentTest=[]) {
   let testLine = null;
 
   if (fileData.length == 0) {
-    testHash[testCaseName] = currentTest; // add test to hash
+    testHash[testCaseName] = currentTest;
     return testHash;
   }
-  // fileData[0][0] is a test name...
+
   if (fileData[0][0] != "") {
-    // we set currentTest to an empty array everytime we add a test to the hash
-    // so we check for an empty array...
     if (currentTest.length == 0) {
       testCaseName = fileData[0][0];
       testLine = fileData[0];
-
       currentTest.push(testLine); // create test
 
       fileData.shift();
@@ -157,12 +149,13 @@ function writeToCSV(tests) {
   let counter = 0;
 
   for (let test in tests) {
+
     let fcs = fixCommaSeparation(tests[test]);
 
     for (let line in fcs) {
       let rowItem = fcs[line];
       if (counter < 4 && line === fcs.length) {
-        csvTests.push(rowBuilder);  // push remaining tests lines
+        csvTests.push(rowBuilder);  // push remaining test lines
       } else if (counter < 4 && counter === 0) { // start new row
         rowBuilder.push(`\n${rowItem}`);
         counter += 1;
@@ -193,43 +186,30 @@ function createDownloadElment(testFile) {
   element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(testFile));
   element.setAttribute('download', fileName);
   addDownloadElement(element);
-
   return element;
 }
 
 // FORMAT FUNCTIONS
 function getTests(selectedTests) {
-  let range = Array.from(Array(selectedTests.length).keys());
-
-  return range.map(test =>
+  return Array.from(Array(selectedTests.length).keys(), test =>
     localStorage.getItem(selectedTests[test]).split(",")
   );
 }
 
-function formatTestFromCSV(test, testName) {
-  var test = test.replace(testName, "");
-  var str = "";
-
-  for (let i = 0; i < test.length; i++) {
-    if ((test[i] + test[i + 1]) === ",,") {
-      str += "";
-    } else if (test[i] != ",") {
-      str += test[i];
-    } else {
-      str += ",";
-    }
-  }
-  return format(str.split(","));
+function formatTestForUI(test) {
+  let tests = replaceAll(test, ",,", "");
+  return format(tests.split(","));
 }
 
 function format(test) {
   var line = [];
+
   for (let i = 0; i < test.length; i++) {
     if ((test[i] === "") || (test[i] === "Full") || (test[i] === "Partial")) {
       // do nothing
     } else if (test[i][0] === " ") {
-      line.splice(-1, 1); //remove last utterance from array
-      let cu = correctedUtterance(test[i-1], test[i]);
+      line.splice(-1, 1);
+      let cu = correctedUtterance(test[i-1], test[i], ", ");
       line.push(cu);
     } else {
       line.push(test[i]);
@@ -238,18 +218,18 @@ function format(test) {
   return line;
 }
 
-function correctedUtterance(previousUtterance, currentUtterance) {
-  return previousUtterance + ", " + currentUtterance;
+function correctedUtterance(previousUtterance, currentUtterance, replaceChar) {
+  return previousUtterance + replaceChar + currentUtterance;
 }
 
 function fixCommaSeparation(test) {
   var currentRow = [];
   for (let i = 0; i < test.length; i++) {
     if (test[i][0] === " ") {
-      currentRow.splice(-1, 1); //remove last utterance from array
+      currentRow.splice(-1, 1);
       // replacing comma b/c of csv parsing and I'm lazy!
-      let utterance = test[i-1] + ";" + test[i];
-      currentRow.push(utterance);
+      let cu = correctedUtterance(test[i-1], test[i], ";");
+      currentRow.push(cu);
     } else {
       currentRow.push(test[i]);
     }
@@ -257,14 +237,6 @@ function fixCommaSeparation(test) {
   return currentRow;
 }
 
-function fixTestCaseName(testName) {
-  var str = "";
-  for (let i = 0; i < testName.length; i++) {
-    if (testName[i] != "\"") {
-      str += testName[i];
-    } else {
-      str += "'";
-    }
-  }
-  return str;
+function replaceAll(item, pattern, replace) {
+  return item.replace(new RegExp(pattern, 'g'), replace);
 }
