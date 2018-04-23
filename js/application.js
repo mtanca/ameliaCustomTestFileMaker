@@ -1,7 +1,7 @@
 // UI FUNCTIONS
 function appendTestsToUI(testCases) {
-  for (var test in testCases) {
-    var t = fixTestCaseName(test);
+  for (let test in testCases) {
+    let t = fixTestCaseName(test);
     localStorage.setItem(t, testCases[test]);
     $("#tests").append(`<input type="checkbox" class="testcase" value="${t}" onmouseover="showTestConversation(this)" onmouseout="removeTestConversation(this)"> ${t} </br>`);
   }
@@ -10,12 +10,12 @@ function appendTestsToUI(testCases) {
 }
 
 function showTestConversation(event) {
-  var id = event.value;
-  var test = localStorage.getItem(id);
-  var ft = formatTestFromCSV(test, id);
+  let id = event.value;
+  let test = localStorage.getItem(id);
+  let ft = formatTestFromCSV(test, id);
 
   addTestConversationHeader();
-  for (var line in ft) {
+  for (let line in ft) {
     $("#testConversation").append(`<p class="testconv">${ft[line]}</p>`);
   }
 
@@ -38,13 +38,11 @@ function showForm() {
   $("#form").show();
 }
 
-function getCheckedTests(event) {
-  var checkedTests = [];
+function getCheckedTests() {
+  let checkedTests = $(".testcase:checked");
+  let range = Array.from(Array(checkedTests.length).keys());
 
-  $(".testcase:checked").each(function() {
-    checkedTests.push($(this).val());
-  });
-  return checkedTests;
+  return range.map(test => checkedTests[test].value);
 }
 
 function addDownloadElement(element){
@@ -57,15 +55,15 @@ function removeDownloadElment(element){
 
 // READ FUNCTIONS
 function openFile(event) {
-  var input = event.target;
-  var testFiles = input.files;
+  const input = event.target;
+  const testFiles = input.files;
 
-  for (var i = 0; i < testFiles.length; i++) {
-    var reader = new FileReader();
+  for (let i = 0; i < testFiles.length; i++) {
+    let reader = new FileReader();
 
     reader.onload = function() {
-      var fileData = reader.result;
-      var testCases = convertTests(fileData);
+      let fileData = reader.result;
+      let testCases = convertTests(fileData);
 
       appendTestsToUI(testCases);
     };
@@ -108,11 +106,8 @@ function convertTests(strData) {
 }
 
 // done recursively out of bordem... refactor to fit codebase style
-function testsToHash(fileData, testCaseName, testHash, currentTest) {
-  var testCaseName = testCaseName || "";
-  var testHash = testHash || {};
-  var currentTest = currentTest || [];
-  var testLine = null;
+function testsToHash(fileData, testCaseName="", testHash={}, currentTest=[]) {
+  let testLine = null;
 
   if (fileData.length == 0) {
     testHash[testCaseName] = currentTest; // add test to hash
@@ -145,27 +140,27 @@ function testsToHash(fileData, testCaseName, testHash, currentTest) {
 }
 
 // CREATE FUNCTIONS
-function createTests(event) {
-  var checkedTests = getCheckedTests(event);
-  var tests = getTests(checkedTests);
+function createTests() {
+  let checkedTests = getCheckedTests();
+  let tests = getTests(checkedTests);
 
   writeToCSV(tests);
   return false;
 }
 
 function writeToCSV(tests) {
-  var csvHeaders = ["url", "user", "pass", "domain"];
-  var prefilledElements = ["\n<INSTANCE URL>", "", "", "<DOMAIN CODE>"];
-  var testHeaders = ["\ntest case", "utterance", "matcher", "expected result"];
-  var csvTests = [];
-  var rowBuilder = [];
-  var counter = 0;
+  const csvHeaders = ["url", "user", "pass", "domain"];
+  const prefilledElements = ["\n<INSTANCE URL>", "", "", "<DOMAIN CODE>"];
+  const testHeaders = ["\ntest case", "utterance", "matcher", "expected result"];
+  let csvTests = [];
+  let rowBuilder = [];
+  let counter = 0;
 
-  for (var test in tests) {
-    var fcs = fixCommaSeparation(tests[test]);
+  for (let test in tests) {
+    let fcs = fixCommaSeparation(tests[test]);
 
-    for (var line in fcs) {
-      var rowItem = fcs[line];
+    for (let line in fcs) {
+      let rowItem = fcs[line];
       if (counter < 4 && line === fcs.length) {
         csvTests.push(rowBuilder);  // push remaining tests lines
       } else if (counter < 4 && counter === 0) { // start new row
@@ -185,15 +180,15 @@ function writeToCSV(tests) {
 }
 
 function download(testFile) {
-  var element = createDownloadElment(testFile);
+  let element = createDownloadElment(testFile);
   element.click();
 
   removeDownloadElment(element);
 }
 
 function createDownloadElment(testFile) {
-  var fileName = "testcases.csv";
-  var element = document.createElement('a');
+  let fileName = "testcases.csv";
+  let element = document.createElement('a');
 
   element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(testFile));
   element.setAttribute('download', fileName);
@@ -204,18 +199,18 @@ function createDownloadElment(testFile) {
 
 // FORMAT FUNCTIONS
 function getTests(selectedTests) {
-  var tests = [];
+  let range = Array.from(Array(selectedTests.length).keys());
 
-  for (var test in selectedTests) {
-    tests.push(localStorage.getItem(selectedTests[test]).split(","));
-  }
-  return tests;
+  return range.map(test =>
+    localStorage.getItem(selectedTests[test]).split(",")
+  );
 }
 
 function formatTestFromCSV(test, testName) {
   var test = test.replace(testName, "");
   var str = "";
-  for (var i = 0; i < test.length; i++) {
+
+  for (let i = 0; i < test.length; i++) {
     if ((test[i] + test[i + 1]) === ",,") {
       str += "";
     } else if (test[i] != ",") {
@@ -229,12 +224,12 @@ function formatTestFromCSV(test, testName) {
 
 function format(test) {
   var line = [];
-  for (var i = 0; i < test.length; i++) {
+  for (let i = 0; i < test.length; i++) {
     if ((test[i] === "") || (test[i] === "Full") || (test[i] === "Partial")) {
       // do nothing
     } else if (test[i][0] === " ") {
       line.splice(-1, 1); //remove last utterance from array
-      var cu = correctedUtterance(test[i-1], test[i]);
+      let cu = correctedUtterance(test[i-1], test[i]);
       line.push(cu);
     } else {
       line.push(test[i]);
@@ -249,12 +244,11 @@ function correctedUtterance(previousUtterance, currentUtterance) {
 
 function fixCommaSeparation(test) {
   var currentRow = [];
-  for (var i = 0; i < test.length; i++) {
+  for (let i = 0; i < test.length; i++) {
     if (test[i][0] === " ") {
       currentRow.splice(-1, 1); //remove last utterance from array
       // replacing comma b/c of csv parsing and I'm lazy!
-      var utterance = test[i-1] + ";" + test[i];
-
+      let utterance = test[i-1] + ";" + test[i];
       currentRow.push(utterance);
     } else {
       currentRow.push(test[i]);
@@ -265,7 +259,7 @@ function fixCommaSeparation(test) {
 
 function fixTestCaseName(testName) {
   var str = "";
-  for (var i = 0; i < testName.length; i++) {
+  for (let i = 0; i < testName.length; i++) {
     if (testName[i] != "\"") {
       str += testName[i];
     } else {
