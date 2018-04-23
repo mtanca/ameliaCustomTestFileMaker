@@ -33,7 +33,7 @@ function hideForm() {
 }
 
 function showForm() {
-   $("#form").show();
+  $("#form").show();
 }
 
 function getCheckedTests() {
@@ -149,14 +149,13 @@ function writeToCSV(tests) {
   let counter = 0;
 
   for (let test in tests) {
-
     let fcs = fixCommaSeparation(tests[test]);
 
     for (let line in fcs) {
       let rowItem = fcs[line];
       if (counter < 4 && line === fcs.length) {
-        csvTests.push(rowBuilder);  // push remaining test lines
-      } else if (counter < 4 && counter === 0) { // start new row
+        csvTests.push(rowBuilder);
+      } else if (counter < 4 && counter === 0) {
         rowBuilder.push(`\n${rowItem}`);
         counter += 1;
       } else if (counter < 4) {
@@ -197,20 +196,19 @@ function getTests(selectedTests) {
 }
 
 function formatTestForUI(test) {
-  let tests = replaceAll(test, ",,", "");
-  return format(tests.split(","));
+  let t = replaceAll(test, ",,", "");
+  return format(t.split(","));
 }
 
 function format(test) {
   var line = [];
+  const skipChars = {"":true, "Full":true, "Partial":true}
 
   for (let i = 0; i < test.length; i++) {
-    if ((test[i] === "") || (test[i] === "Full") || (test[i] === "Partial")) {
+    if (skipChars[test[i]]) {
       // do nothing
     } else if (test[i][0] === " ") {
-      line.splice(-1, 1);
-      let cu = correctedUtterance(test[i-1], test[i], ", ");
-      line.push(cu);
+      line = replaceUtterance(line, test[i-1], test[i], ", ")
     } else {
       line.push(test[i]);
     }
@@ -218,18 +216,21 @@ function format(test) {
   return line;
 }
 
-function correctedUtterance(previousUtterance, currentUtterance, replaceChar) {
-  return previousUtterance + replaceChar + currentUtterance;
+function replaceUtterance(array, previous, current, insertChars){
+  array.splice(-1, 1);
+  array.push(correctUtterance(previous, current, insertChars));
+  return array
+}
+
+function correctUtterance(previousUtterance, currentUtterance, char) {
+  return previousUtterance + char + currentUtterance;
 }
 
 function fixCommaSeparation(test) {
   var currentRow = [];
   for (let i = 0; i < test.length; i++) {
     if (test[i][0] === " ") {
-      currentRow.splice(-1, 1);
-      // replacing comma b/c of csv parsing and I'm lazy!
-      let cu = correctedUtterance(test[i-1], test[i], ";");
-      currentRow.push(cu);
+      currentRow = replaceUtterance(currentRow, test[i-1], test[i], ";");
     } else {
       currentRow.push(test[i]);
     }
